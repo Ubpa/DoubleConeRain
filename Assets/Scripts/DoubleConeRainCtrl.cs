@@ -11,9 +11,27 @@ public class DoubleConeRainCtrl : MonoBehaviour
     private const float HEIGHT = 10.0f;
     private const float RADIUS = 1.0f;
 
+    public Camera cam;
+
+    [Range(0.0f,10.0f)]
+    public float rainSpeed = 1.0f;
+
+    [Tooltip("只控制方向；用 Wind Speed 来控制风速")]
+    public Vector3 windDir = new Vector3(0,0,0);
+
+    [Range(0.0f,10.0f)]
+    public float windSpeed = 0.0f;
+
+    [Tooltip("只控制方向；用 Camera Move Speed 来控制移速")]
+    public Vector3 cameraMoveDir = new Vector3(0, 0, 1);
+
+    [Range(0.0f, 10.0f)]
+    public float cameraMoveSpeed = 0.0f;
+
     private void Awake()
     {
         InitMesh();
+        transform.forward = new Vector3(0, 0, 1);
     }
 
     private void InitMesh()
@@ -46,15 +64,11 @@ public class DoubleConeRainCtrl : MonoBehaviour
         }
 
         // color
-        for (int i = 0; i < numPointX; i++)
-            colors[i] = new Color(1, 1, 1, 0);
-        for (int j = 1; j < numPointY - 1; j++)
+        for(int i = 0; i < numPoint; i++)
         {
-            for (int i = 0; i < numPointX; i++)
-                colors[i + j * numPointX] = new Color(1, 1, 1, 1);
+            float t = 1 - Mathf.Abs(verts[i].y) / HEIGHT;
+            colors[i] = new Color(1, 1, 1, t*t*t);
         }
-        for (int i = 0; i < numPointX; i++)
-            colors[i + (numPointY - 1) * numPointX] = new Color(1, 1, 1, 0);
 
         // uvs
         for (int i = 0; i < numPoint; i++)
@@ -99,5 +113,21 @@ public class DoubleConeRainCtrl : MonoBehaviour
 
         // to scene
         GetComponent<MeshFilter>().mesh = doubleCone;
+    }
+
+    private void Update()
+    {
+        cam.transform.position += cameraMoveSpeed * cameraMoveDir.normalized * Time.deltaTime;
+        transform.position = cam.transform.position;
+
+        var rainV = rainSpeed * new Vector3(0, -1, 0);
+        var windV = Mathf.Max(0.001f, windSpeed) * windDir.normalized;
+        var camV = Mathf.Max(0.001f, cameraMoveSpeed) * cameraMoveDir.normalized;
+        var rainDir = (rainV + windV - camV).normalized;
+
+        var left = Vector3.Cross(rainDir, new Vector3(0, 0, 1));
+        var front = Vector3.Cross(left, rainDir);
+
+        transform.forward = front;
     }
 }
