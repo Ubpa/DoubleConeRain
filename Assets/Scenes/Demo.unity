@@ -244,15 +244,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   cam: {fileID: 534669904}
-  rainSpeed: 10
+  rainSpeed: 5
   windDir: {x: 1, y: 0, z: 0}
   windSpeed: 1
   cameraMoveDir: {x: 0, y: 0, z: 1}
-  cameraMoveSpeed: 0
-  layer0SpeedFactor: 0.08
-  layer1SpeedFactor: 0.04
-  layer2SpeedFactor: 0.02
-  layer3SpeedFactor: 0.01
+  cameraMoveSpeed: 10
+  layer0SpeedFactor: 0.16
+  layer1SpeedFactor: 0.08
+  layer2SpeedFactor: 0.04
+  layer3SpeedFactor: 0.02
   tiling0: {x: 5, y: 5}
   tiling1: {x: 10, y: 10}
   tiling2: {x: 15, y: 15}
@@ -322,13 +322,13 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1441902116}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 1, w: 0}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 2
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_RootOrder: 3
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 180}
 --- !u!1 &1533595343
 GameObject:
   m_ObjectHideFlags: 0
@@ -488,5 +488,5 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 3
+  m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}

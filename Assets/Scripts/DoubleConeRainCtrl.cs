@@ -158,10 +158,7 @@ public class DoubleConeRainCtrl : MonoBehaviour
         var camV = Mathf.Max(0.001f, cameraMoveSpeed) * cameraMoveDir.normalized;
         var rainDir = (rainV + windV - camV).normalized;
 
-        var left = Vector3.Cross(rainDir, new Vector3(0, 0, 1));
-        var front = Vector3.Cross(left, rainDir);
-
-        transform.forward = front;
+        transform.rotation *= Quaternion.FromToRotation(-transform.up, rainDir);
 
         // update offset
         vOffset0 += Time.deltaTime * layer0SpeedFactor * rainSpeed;
