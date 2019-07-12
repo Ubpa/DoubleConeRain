@@ -7,8 +7,8 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: OneLayerRain
-  m_Shader: {fileID: 4800000, guid: cc31730af5c020144bf964d6f499ba7e, type: 3}
+  m_Name: std
+  m_Shader: {fileID: 46, guid: 0000000000000000f000000000000000, type: 0}
   m_ShaderKeywords: 
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
@@ -40,8 +40,8 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MainTex:
-        m_Texture: {fileID: 2800000, guid: b958a674609b2bb42a42237db2fe0439, type: 3}
-        m_Scale: {x: 5, y: 5}
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MetallicGlossMap:
         m_Texture: {fileID: 0}
@@ -63,8 +63,6 @@ Material:
     - _GlossMapScale: 1
     - _Glossiness: 0.5
     - _GlossyReflections: 1
-    - _Intensity: 0.1
-    - _IntensityFactor: 0.04
     - _Metallic: 0
     - _Mode: 0
     - _OcclusionStrength: 1
@@ -74,12 +72,6 @@ Material:
     - _SrcBlend: 1
     - _UVSec: 0
     - _ZWrite: 1
-    - _yOffset0: 0
     m_Colors:
-    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _Color: {r: 0.1254902, g: 0.1254902, b: 0.1254902, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _Intensity: {r: 1, g: 0.5, b: 0.25, a: 0.125}
-    - _ST0: {r: 3, g: 3, b: 2, a: 2}
-    - _ST1: {r: 1, g: 1, b: 0, a: 0}
-    - _ST2: {r: 1, g: 1, b: 0, a: 0}
-    - _ST3: {r: 1, g: 1, b: 0, a: 0}

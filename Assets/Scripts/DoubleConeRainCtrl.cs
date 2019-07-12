@@ -57,12 +57,15 @@ public class DoubleConeRainCtrl : MonoBehaviour
     private void Awake()
     {
         InitMesh();
+
         transform.forward = new Vector3(0, 0, 1);
 
         vOffset0 = 0;
         vOffset1 = 0;
         vOffset2 = 0;
         vOffset3 = 0;
+
+        cam.depthTextureMode |= DepthTextureMode.Depth;
     }
 
     private void InitMesh()

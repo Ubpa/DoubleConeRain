@@ -4,7 +4,10 @@
     {
 		[NoScaleOffset]
         _MainTex ("Texture", 2D) = "white" {}
-		_Intensity ("Intensity", Range(0,1)) = 1.0
+
+		_Intensity ("Intensity", Vector) = (1,0.5,0.25,0.125)
+		_IntensityFactor("Intensity Factor", Range(0,1)) = 0.1
+		
 		_ST0("ST 0", Vector) = (1,1,0,0)
 		_ST1("ST 1", Vector) = (1,1,0,0)
 		_ST2("ST 2", Vector) = (1,1,0,0)
@@ -17,7 +20,7 @@
 
         Pass
         {
-			ZWrite Off
+			ZWrite Off ZTest On
 			Blend One One
 
             CGPROGRAM
@@ -38,6 +41,7 @@
 				float4 uv01 : TEXCOORD0;
 				float4 uv23 : TEXCOORD1;
 				float4 color : TEXCOORD2;
+				float4 screenPos : TEXCOORD3;
                 float4 vertex : SV_POSITION;
             };
 
@@ -46,8 +50,10 @@
 			uniform float4 _ST1;
 			uniform float4 _ST2;
 			uniform float4 _ST3;
+			sampler2D _CameraDepthTexture;
 
-			float _Intensity;
+			float4 _Intensity;
+			float _IntensityFactor;
 
             v2f vert (appdata v)
             {
@@ -60,19 +66,49 @@
 				o.uv23.zw = v.uv *_ST3.xy + _ST3.zw;
 
 				o.color = v.color;
+
+				o.screenPos = ComputeScreenPos(o.vertex);
+
                 return o;
             }
 
-            fixed4 frag (v2f i) : SV_Target
+			void frag (v2f i, out fixed4 color : COLOR, out float depth : DEPTH)
+			//void frag(v2f i, out fixed4 color : COLOR)
             {
                 // sample the texture
-                fixed4 col0 = tex2D(_MainTex, i.uv01.xy);
-				fixed4 col1 = tex2D(_MainTex, i.uv01.zw);
-				fixed4 col2 = tex2D(_MainTex, i.uv23.xy);
-				fixed4 col3 = tex2D(_MainTex, i.uv23.zw);
-				fixed4 col = col0 + col1 + col2 + col3;
-				col *= i.color;
-                return fixed4(col.xyz * col.a * _Intensity, 1);
+                fixed4 val0 = tex2D(_MainTex, i.uv01.xy);
+				fixed4 val1 = tex2D(_MainTex, i.uv01.zw);
+				fixed4 val2 = tex2D(_MainTex, i.uv23.xy);
+				fixed4 val3 = tex2D(_MainTex, i.uv23.zw);
+
+				// depth 1 近 0 远
+				float screenDepth = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.screenPos.xy / i.screenPos.w);
+
+				fixed depth0 = 1 - (0.000 + val0.a * 0.067);
+				fixed depth1 = 1 - (0.067 + val1.a * 0.133);
+				fixed depth2 = 1 - (0.200 + val2.a * 0.267);
+				fixed depth3 = 1 - (0.467 + val3.a * 0.533);
+
+				fixed3 sumCol = fixed3(0,0,0);
+
+				if (depth0 > screenDepth)
+					sumCol += val0.rgb * _Intensity.x;
+
+				if (depth1 > screenDepth)
+					sumCol += val1.rgb * _Intensity.y;
+
+				if (depth2 > screenDepth)
+					sumCol += val2.rgb * _Intensity.z;
+
+				if (depth3 > screenDepth)
+					sumCol += val3.rgb * _Intensity.w;
+				
+				sumCol *= _IntensityFactor;
+
+				color = fixed4(i.color.a * i.color.rgb * sumCol, 1);
+				//color = fixed4(screenDepth, 0, 0, 1);
+				depth = max(max(max(val0.a, val1.a), val2.a), val3.a);
+				//depth = 1;
             }
             ENDCG
         }
