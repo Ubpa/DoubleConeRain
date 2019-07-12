@@ -2,6 +2,11 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+// TODO
+// 1. 轻微旋转
+// 2. 遮挡
+// 3. 关系
+
 public class DoubleConeRainCtrl : MonoBehaviour
 {
     private Mesh doubleCone;
@@ -28,10 +33,36 @@ public class DoubleConeRainCtrl : MonoBehaviour
     [Range(0.0f, 10.0f)]
     public float cameraMoveSpeed = 0.0f;
 
+    [Range(0.0f, 1.0f)]
+    public float layer0SpeedFactor = 0.0f;
+    private float vOffset0;
+
+    [Range(0.0f, 1.0f)]
+    public float layer1SpeedFactor = 0.0f;
+    private float vOffset1;
+
+    [Range(0.0f, 1.0f)]
+    public float layer2SpeedFactor = 0.0f;
+    private float vOffset2;
+
+    [Range(0.0f, 1.0f)]
+    public float layer3SpeedFactor = 0.0f;
+    private float vOffset3;
+
+    public Vector2 tiling0 = new Vector2(1, 1);
+    public Vector2 tiling1 = new Vector2(1, 1);
+    public Vector2 tiling2 = new Vector2(1, 1);
+    public Vector2 tiling3 = new Vector2(1, 1);
+
     private void Awake()
     {
         InitMesh();
         transform.forward = new Vector3(0, 0, 1);
+
+        vOffset0 = 0;
+        vOffset1 = 0;
+        vOffset2 = 0;
+        vOffset3 = 0;
     }
 
     private void InitMesh()
@@ -117,9 +148,11 @@ public class DoubleConeRainCtrl : MonoBehaviour
 
     private void Update()
     {
+        // update pos
         cam.transform.position += cameraMoveSpeed * cameraMoveDir.normalized * Time.deltaTime;
         transform.position = cam.transform.position;
 
+        // update rotation
         var rainV = rainSpeed * new Vector3(0, -1, 0);
         var windV = Mathf.Max(0.001f, windSpeed) * windDir.normalized;
         var camV = Mathf.Max(0.001f, cameraMoveSpeed) * cameraMoveDir.normalized;
@@ -129,5 +162,20 @@ public class DoubleConeRainCtrl : MonoBehaviour
         var front = Vector3.Cross(left, rainDir);
 
         transform.forward = front;
+
+        // update offset
+        vOffset0 += Time.deltaTime * layer0SpeedFactor * rainSpeed;
+        vOffset0 -= Mathf.Floor(vOffset0);
+        vOffset1 += Time.deltaTime * layer1SpeedFactor * rainSpeed;
+        vOffset1 -= Mathf.Floor(vOffset1);
+        vOffset2 += Time.deltaTime * layer2SpeedFactor * rainSpeed;
+        vOffset2 -= Mathf.Floor(vOffset2);
+        vOffset3 += Time.deltaTime * layer3SpeedFactor * rainSpeed;
+        vOffset3 -= Mathf.Floor(vOffset3);
+
+        GetComponent<MeshRenderer>().material.SetVector("_ST0", new Vector4(tiling0.x, tiling0.y, 0, -vOffset0));
+        GetComponent<MeshRenderer>().material.SetVector("_ST1", new Vector4(tiling1.x, tiling1.y, 0, -vOffset1));
+        GetComponent<MeshRenderer>().material.SetVector("_ST2", new Vector4(tiling2.x, tiling2.y, 0, -vOffset2));
+        GetComponent<MeshRenderer>().material.SetVector("_ST3", new Vector4(tiling3.x, tiling3.y, 0, -vOffset3));
     }
 }
