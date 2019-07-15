@@ -8,10 +8,13 @@
 		_Intensity ("Intensity", Vector) = (1,0.5,0.25,0.125)
 		_IntensityFactor("Intensity Factor", Range(0,1)) = 0.1
 		
-		_ST0("ST 0", Vector) = (1,1,0,0)
-		_ST1("ST 1", Vector) = (1,1,0,0)
-		_ST2("ST 2", Vector) = (1,1,0,0)
-		_ST3("ST 3", Vector) = (1,1,0,0)
+		_RainST0("ST 0", Vector) = (1,1,0,0)
+		_RainST1("ST 1", Vector) = (1,1,0,0)
+		_RainST2("ST 2", Vector) = (1,1,0,0)
+		_RainST3("ST 3", Vector) = (1,1,0,0)
+
+		_DepthT("Depth T", Vector) = (0,0,0,0)
+		_DepthS("Depth S", Vector) = (0,0,0,0)
 
 		_SceneTopDepth("Scene Top Depth", 2D) = "black" {}
     }
@@ -49,10 +52,12 @@
             };
 
             sampler2D _MainTex;
-			uniform float4 _ST0;
-			uniform float4 _ST1;
-			uniform float4 _ST2;
-			uniform float4 _ST3;
+			uniform float4 _RainST0;
+			uniform float4 _RainST1;
+			uniform float4 _RainST2;
+			uniform float4 _RainST3;
+			uniform float4 _DepthT;
+			uniform float4 _DepthS;
 			sampler2D _CameraDepthTexture;
 			sampler2D _SceneTopDepth;
 			uniform float4x4 _mainCamClip2depthCamClip;
@@ -65,10 +70,10 @@
 				v2f o;
 				o.vertex = UnityObjectToClipPos(v.vertex);
 
-				o.uv01.xy = v.uv *_ST0.xy + _ST0.zw;
-				o.uv01.zw = v.uv *_ST1.xy + _ST1.zw;
-				o.uv23.xy = v.uv *_ST2.xy + _ST2.zw;
-				o.uv23.zw = v.uv *_ST3.xy + _ST3.zw;
+				o.uv01.xy = v.uv *_RainST0.xy + _RainST0.zw;
+				o.uv01.zw = v.uv *_RainST1.xy + _RainST1.zw;
+				o.uv23.xy = v.uv *_RainST2.xy + _RainST2.zw;
+				o.uv23.zw = v.uv *_RainST3.xy + _RainST3.zw;
 
 				o.color = v.color;
 
@@ -112,14 +117,10 @@
 
 				fixed2 screenPos = i.screenPos.xy / i.screenPos.w;
 
-				// TODO
-				// 合理划分区域
-				float delta = _ProjectionParams.z - _ProjectionParams.y; // far - near
-				float qtrDelta = delta / 4.0;
-				float eyeDepth0 = _ProjectionParams.y + (0.0 + val0.a) * qtrDelta;
-				float eyeDepth1 = _ProjectionParams.y + (1.0 + val1.a) * qtrDelta;
-				float eyeDepth2 = _ProjectionParams.y + (2.0 + val2.a) * qtrDelta;
-				float eyeDepth3 = _ProjectionParams.y + (3.0 + val3.a) * qtrDelta;
+				float eyeDepth0 = val0.a * _DepthS.x + _DepthT.x;
+				float eyeDepth1 = val1.a * _DepthS.y + _DepthT.y;
+				float eyeDepth2 = val2.a * _DepthS.z + _DepthT.z;
+				float eyeDepth3 = val3.a * _DepthS.w + _DepthT.w;
 
 				fixed3 sumCol = fixed3(0,0,0);
 
