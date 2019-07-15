@@ -35,6 +35,9 @@ public class DoubleConeRainCtrl : MonoBehaviour
     public float mainCameraMoveSpeed = 0.0f;
 
     [Range(0.0f, 1.0f)]
+    public float layerSpeed = 0.0f;
+
+    [Range(0.0f, 1.0f)]
     public float layer0SpeedFactor = 0.0f;
     private float vOffset0;
 
@@ -50,10 +53,7 @@ public class DoubleConeRainCtrl : MonoBehaviour
     public float layer3SpeedFactor = 0.0f;
     private float vOffset3;
 
-    public Vector2 tiling0 = new Vector2(1, 1);
-    public Vector2 tiling1 = new Vector2(1, 1);
-    public Vector2 tiling2 = new Vector2(1, 1);
-    public Vector2 tiling3 = new Vector2(1, 1);
+    public Vector2 tiling = new Vector2(1, 1);
 
     private void Awake()
     {
@@ -165,19 +165,19 @@ public class DoubleConeRainCtrl : MonoBehaviour
         transform.rotation *= Quaternion.FromToRotation(-transform.up, rainDir);
 
         // update offset
-        vOffset0 += Time.deltaTime * layer0SpeedFactor * rainSpeed;
+        vOffset0 += Time.deltaTime * layer0SpeedFactor * layerSpeed * rainSpeed;
         vOffset0 -= Mathf.Floor(vOffset0);
-        vOffset1 += Time.deltaTime * layer1SpeedFactor * rainSpeed;
+        vOffset1 += Time.deltaTime * layer1SpeedFactor * layerSpeed * rainSpeed;
         vOffset1 -= Mathf.Floor(vOffset1);
-        vOffset2 += Time.deltaTime * layer2SpeedFactor * rainSpeed;
+        vOffset2 += Time.deltaTime * layer2SpeedFactor * layerSpeed * rainSpeed;
         vOffset2 -= Mathf.Floor(vOffset2);
-        vOffset3 += Time.deltaTime * layer3SpeedFactor * rainSpeed;
+        vOffset3 += Time.deltaTime * layer3SpeedFactor * layerSpeed * rainSpeed;
         vOffset3 -= Mathf.Floor(vOffset3);
 
-        GetComponent<MeshRenderer>().material.SetVector("_ST0", new Vector4(tiling0.x, tiling0.y, 0, -vOffset0));
-        GetComponent<MeshRenderer>().material.SetVector("_ST1", new Vector4(tiling1.x, tiling1.y, 0, -vOffset1));
-        GetComponent<MeshRenderer>().material.SetVector("_ST2", new Vector4(tiling2.x, tiling2.y, 0, -vOffset2));
-        GetComponent<MeshRenderer>().material.SetVector("_ST3", new Vector4(tiling3.x, tiling3.y, 0, -vOffset3));
+        GetComponent<MeshRenderer>().material.SetVector("_ST0", new Vector4(tiling.x, tiling.y, 0, -vOffset0));
+        GetComponent<MeshRenderer>().material.SetVector("_ST1", new Vector4(2 * tiling.x, 2 * tiling.y, 0, -vOffset1));
+        GetComponent<MeshRenderer>().material.SetVector("_ST2", new Vector4(3 * tiling.x, 3 * tiling.y, 0, -vOffset2));
+        GetComponent<MeshRenderer>().material.SetVector("_ST3", new Vector4(4 * tiling.x, 4 * tiling.y, 0, -vOffset3));
 
         // set clip to world
         var depthCamW2C = depthCam.projectionMatrix * depthCam.worldToCameraMatrix;
