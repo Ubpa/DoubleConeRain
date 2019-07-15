@@ -16,7 +16,8 @@ public class DoubleConeRainCtrl : MonoBehaviour
     private const float HEIGHT = 10.0f;
     private const float RADIUS = 1.0f;
 
-    public Camera cam;
+    public Camera mainCam;
+    public Camera depthCam;
 
     [Range(0.0f,10.0f)]
     public float rainSpeed = 1.0f;
@@ -28,10 +29,10 @@ public class DoubleConeRainCtrl : MonoBehaviour
     public float windSpeed = 0.0f;
 
     [Tooltip("只控制方向；用 Camera Move Speed 来控制移速")]
-    public Vector3 cameraMoveDir = new Vector3(0, 0, 1);
+    public Vector3 mainCameraMoveDir = new Vector3(0, 0, 1);
 
     [Range(0.0f, 10.0f)]
-    public float cameraMoveSpeed = 0.0f;
+    public float mainCameraMoveSpeed = 0.0f;
 
     [Range(0.0f, 1.0f)]
     public float layer0SpeedFactor = 0.0f;
@@ -65,7 +66,7 @@ public class DoubleConeRainCtrl : MonoBehaviour
         vOffset2 = 0;
         vOffset3 = 0;
 
-        cam.depthTextureMode |= DepthTextureMode.Depth;
+        mainCam.depthTextureMode |= DepthTextureMode.Depth;
     }
 
     private void InitMesh()
@@ -152,14 +153,14 @@ public class DoubleConeRainCtrl : MonoBehaviour
     private void Update()
     {
         // update pos
-        cam.transform.position += cameraMoveSpeed * cameraMoveDir.normalized * Time.deltaTime;
-        transform.position = cam.transform.position;
+        mainCam.transform.position += mainCameraMoveSpeed * mainCameraMoveDir.normalized * Time.deltaTime;
+        transform.position = mainCam.transform.position;
 
         // update rotation
         var rainV = rainSpeed * new Vector3(0, -1, 0);
         var windV = Mathf.Max(0.001f, windSpeed) * windDir.normalized;
-        var camV = Mathf.Max(0.001f, cameraMoveSpeed) * cameraMoveDir.normalized;
-        var rainDir = (rainV + windV - camV).normalized;
+        var mainCamV = Mathf.Max(0.001f, mainCameraMoveSpeed) * mainCameraMoveDir.normalized;
+        var rainDir = (rainV + windV - mainCamV).normalized;
 
         transform.rotation *= Quaternion.FromToRotation(-transform.up, rainDir);
 
@@ -177,5 +178,11 @@ public class DoubleConeRainCtrl : MonoBehaviour
         GetComponent<MeshRenderer>().material.SetVector("_ST1", new Vector4(tiling1.x, tiling1.y, 0, -vOffset1));
         GetComponent<MeshRenderer>().material.SetVector("_ST2", new Vector4(tiling2.x, tiling2.y, 0, -vOffset2));
         GetComponent<MeshRenderer>().material.SetVector("_ST3", new Vector4(tiling3.x, tiling3.y, 0, -vOffset3));
+
+        // set clip to world
+        var depthCamW2C = depthCam.projectionMatrix * depthCam.worldToCameraMatrix;
+        var mainCamW2C = mainCam.projectionMatrix * mainCam.worldToCameraMatrix;
+        var mainCamClip2depthCamClip = depthCamW2C * mainCamW2C.inverse;
+        GetComponent<MeshRenderer>().material.SetMatrix("_mainCamClip2depthCamClip", mainCamClip2depthCamClip);
     }
 }

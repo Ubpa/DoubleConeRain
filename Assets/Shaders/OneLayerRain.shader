@@ -12,6 +12,8 @@
 		_ST1("ST 1", Vector) = (1,1,0,0)
 		_ST2("ST 2", Vector) = (1,1,0,0)
 		_ST3("ST 3", Vector) = (1,1,0,0)
+
+		_SceneTopDepth("Scene Top Depth", 2D) = "black" {}
     }
     SubShader
     {
@@ -51,6 +53,8 @@
 			uniform float4 _ST2;
 			uniform float4 _ST3;
 			sampler2D _CameraDepthTexture;
+			sampler2D _SceneTopDepth;
+			uniform float4x4 _mainCamClip2depthCamClip;
 
 			float4 _Intensity;
 			float _IntensityFactor;
@@ -72,8 +76,17 @@
                 return o;
             }
 
-			void frag (v2f i, out fixed4 color : COLOR, out float depth : DEPTH)
-			//void frag(v2f i, out fixed4 color : COLOR)
+			fixed VisibilityFromTop(fixed2 screenPos, fixed depth) {
+				float z = (1 + UNITY_NEAR_CLIP_VALUE) * depth - UNITY_NEAR_CLIP_VALUE;
+				float4 depthCamClipPos = mul(_mainCamClip2depthCamClip, float4(2 * screenPos - 1, z, 1));
+				float remapZ = depthCamClipPos.z / depthCamClipPos.w;
+				float remapDepth = (remapZ + UNITY_NEAR_CLIP_VALUE) / (1 + UNITY_NEAR_CLIP_VALUE);
+				fixed2 uv = (depthCamClipPos.xy / depthCamClipPos.w + 1) / 2;
+				float topDepth = DecodeFloatRGBA(tex2D(_SceneTopDepth, uv));
+				return step(remapDepth, topDepth);
+			}
+
+			fixed4 frag (v2f i) : SV_Target
             {
                 // sample the texture
                 fixed4 val0 = tex2D(_MainTex, i.uv01.xy);
@@ -81,34 +94,51 @@
 				fixed4 val2 = tex2D(_MainTex, i.uv23.xy);
 				fixed4 val3 = tex2D(_MainTex, i.uv23.zw);
 
-				// depth 1 近 0 远
-				float screenDepth = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, i.screenPos.xy / i.screenPos.w);
+				fixed2 screenPos = i.screenPos.xy / i.screenPos.w;
 
-				fixed depth0 = 1 - (0.000 + val0.a * 0.067);
-				fixed depth1 = 1 - (0.067 + val1.a * 0.133);
-				fixed depth2 = 1 - (0.200 + val2.a * 0.267);
-				fixed depth3 = 1 - (0.467 + val3.a * 0.533);
+				// depth 0 近 1 远
+				float screenDepth = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, screenPos);
+#if defined(UNITY_REVERSED_Z)
+				screenDepth = 1.0 - screenDepth;
+#endif
+
+				// TODO
+				// 按远近平面均分四层
+
+				float part0 = 1.0;
+				float part1 = 2.0;
+				float part2 = 3.0;
+				float part3 = 4.0;
+				float sumPart = part0 + part1 + part2 + part3;
+				float size0 = part0 / sumPart;
+				float size1 = part1 / sumPart;
+				float size2 = part2 / sumPart;
+				float size3 = part3 / sumPart;
+				float size01 = size0 + size1;
+				float size012 = size01 + size2;
+
+				fixed depth0 = 0.000 + val0.a * size0;
+				fixed depth1 = size0 + val1.a * size1;
+				fixed depth2 = size01 + val2.a * size2;
+				fixed depth3 = size012 + val3.a * size3;
 
 				fixed3 sumCol = fixed3(0,0,0);
 
-				if (depth0 > screenDepth)
-					sumCol += val0.rgb * _Intensity.x;
+				if (depth0 < screenDepth)
+					sumCol += val0.rgb * _Intensity.x * VisibilityFromTop(screenPos, depth0);
 
-				if (depth1 > screenDepth)
-					sumCol += val1.rgb * _Intensity.y;
+				if (depth1 < screenDepth)
+					sumCol += val1.rgb * _Intensity.y * VisibilityFromTop(screenPos, depth1);
 
-				if (depth2 > screenDepth)
-					sumCol += val2.rgb * _Intensity.z;
+				if (depth2 < screenDepth)
+					sumCol += val2.rgb * _Intensity.z * VisibilityFromTop(screenPos, depth2);
 
-				if (depth3 > screenDepth)
-					sumCol += val3.rgb * _Intensity.w;
+				if (depth3 < screenDepth)
+					sumCol += val3.rgb * _Intensity.w * VisibilityFromTop(screenPos, depth3);
 				
 				sumCol *= _IntensityFactor;
 
-				color = fixed4(i.color.a * i.color.rgb * sumCol, 1);
-				//color = fixed4(screenDepth, 0, 0, 1);
-				depth = max(max(max(val0.a, val1.a), val2.a), val3.a);
-				//depth = 1;
+				return fixed4(i.color.a * i.color.rgb * sumCol, 1);
             }
             ENDCG
         }
