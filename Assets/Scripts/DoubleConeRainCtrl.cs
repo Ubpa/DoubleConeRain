@@ -50,6 +50,10 @@ public class DoubleConeRainCtrl : MonoBehaviour
 
     public Vector2 tiling = new Vector2(1, 1);
 
+    public Vector4 intensity = new Vector4(1, 1, 1, 1);
+    [Range(0.0f,1.0f)]
+    public float intensityFactor = 1.0f;
+
     private void Awake()
     {
         InitMesh();
@@ -169,6 +173,7 @@ public class DoubleConeRainCtrl : MonoBehaviour
         vOffset3 += Time.deltaTime * layerSpeed * rainDir.magnitude;
         vOffset3 -= Mathf.Floor(vOffset3);
 
+        // rain tiling
         float tiling0Factor = Mathf.Pow((1 + layerSpiltRatio), 0);
         float tiling1Factor = Mathf.Pow((1 + layerSpiltRatio), 1);
         float tiling2Factor = Mathf.Pow((1 + layerSpiltRatio), 2);
@@ -183,6 +188,7 @@ public class DoubleConeRainCtrl : MonoBehaviour
         GetComponent<MeshRenderer>().material.SetVector("_RainST3",
             new Vector4(tiling3Factor * tiling.x, tiling3Factor * tiling.y, 0, -vOffset3));
 
+        // depth ST
         float sumTilingFactor = tiling0Factor + tiling1Factor + tiling2Factor + tiling3Factor;
         float delta = mainCam.farClipPlane - mainCam.nearClipPlane;
         float bias0 = mainCam.nearClipPlane;
@@ -198,6 +204,10 @@ public class DoubleConeRainCtrl : MonoBehaviour
             new Vector4(bias0, bias1, bias2, bias3));
         GetComponent<MeshRenderer>().material.SetVector("_DepthS",
             new Vector4(scale0, scale1, scale2, scale3));
+
+        // intensity, inverse square law
+        GetComponent<MeshRenderer>().material.SetVector("_Intensity",
+            intensityFactor * intensity);
 
         // set clip to world
         var depthCamW2C = depthCam.projectionMatrix * depthCam.worldToCameraMatrix;

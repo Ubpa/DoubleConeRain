@@ -5,17 +5,7 @@
 		[NoScaleOffset]
         _MainTex ("Texture", 2D) = "white" {}
 
-		_Intensity ("Intensity", Vector) = (1,0.5,0.25,0.125)
-		_IntensityFactor("Intensity Factor", Range(0,1)) = 0.1
-		
-		_RainST0("ST 0", Vector) = (1,1,0,0)
-		_RainST1("ST 1", Vector) = (1,1,0,0)
-		_RainST2("ST 2", Vector) = (1,1,0,0)
-		_RainST3("ST 3", Vector) = (1,1,0,0)
-
-		_DepthT("Depth T", Vector) = (0,0,0,0)
-		_DepthS("Depth S", Vector) = (0,0,0,0)
-
+		[NoScaleOffset]
 		_SceneTopDepth("Scene Top Depth", 2D) = "black" {}
     }
     SubShader
@@ -27,7 +17,6 @@
         {
 			ZWrite Off ZTest Off
 			Blend One One
-			//Blend One Zero
 
             CGPROGRAM
             #pragma vertex vert
@@ -63,7 +52,6 @@
 			uniform float4x4 _mainCamClip2depthCamClip;
 
 			float4 _Intensity;
-			float _IntensityFactor;
 
 			v2f vert (appdata v)
 			{
@@ -90,10 +78,8 @@
 				screenDepth = 1.0 - screenDepth;
 				depth = 1.0 - depth;
 #endif
-				//return depth;
 
 				fixed visibility0 = step(depth, screenDepth);
-				//return visibility0;
 
 				float z = (1 + UNITY_NEAR_CLIP_VALUE) * depth - UNITY_NEAR_CLIP_VALUE;
 				float4 depthCamClipPos = mul(_mainCamClip2depthCamClip, float4(2 * screenPos - 1, z, 1));
@@ -128,12 +114,8 @@
 				sumCol += val1.rgb * _Intensity.y * VisibilityFromTop(screenPos, eyeDepth1);
 				sumCol += val2.rgb * _Intensity.z * VisibilityFromTop(screenPos, eyeDepth2);
 				sumCol += val3.rgb * _Intensity.w * VisibilityFromTop(screenPos, eyeDepth3);
-				
-				sumCol *= _IntensityFactor;
 
 				return fixed4(i.color.a * i.color.rgb * sumCol, 1);
-				//fixed rst = VisibilityFromTop(screenPos, eyeDepth0);
-				//return fixed4(rst, rst, rst, 1);
             }
             ENDCG
         }

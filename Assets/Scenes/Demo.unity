@@ -622,8 +622,10 @@ MonoBehaviour:
   mainCameraMoveDir: {x: 0, y: 0, z: 1}
   mainCameraMoveSpeed: 1
   layerSpeed: 0.2
-  layerSpiltRatio: 2
-  tiling: {x: 10, y: 5}
+  layerSpiltRatio: 1.2
+  tiling: {x: 5, y: 5}
+  intensity: {x: 1, y: 1, z: 1, w: 1}
+  intensityFactor: 0.072
 --- !u!135 &1441902118
 SphereCollider:
   m_ObjectHideFlags: 0
