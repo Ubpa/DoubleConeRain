@@ -2,22 +2,15 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// TODO
-// 1. 轻微旋转
-// 2. 遮挡
-// 3. 关系
-
 public class DoubleConeRainCtrl : MonoBehaviour
 {
-    private Mesh doubleCone;
-
-    private const int NUM_MID_PART = 50;
-    private const int NUM_HALF_PART = 10;
-    private const float HEIGHT = 10.0f;
-    private const float RADIUS = 1.0f;
-
+    // public
     public Camera mainCam;
     public Camera depthCam;
+
+    public Material rain;
+
+    private Mesh doubleCone;
 
     [Range(0.0f,10.0f)]
     public float rainSpeed = 1.0f;
@@ -25,7 +18,7 @@ public class DoubleConeRainCtrl : MonoBehaviour
     [Tooltip("只控制方向；用 Wind Speed 来控制风速")]
     public Vector3 windDir = new Vector3(0,0,0);
 
-    [Range(0.0f,10.0f)]
+    [Range(-10.0f,10.0f)]
     public float windSpeed = 0.0f;
 
     [Range(0.0f, 1.0f)]
@@ -34,7 +27,7 @@ public class DoubleConeRainCtrl : MonoBehaviour
     [Tooltip("只控制方向；用 Camera Move Speed 来控制移速")]
     public Vector3 mainCameraMoveDir = new Vector3(0, 0, 1);
 
-    [Range(0.0f, 10.0f)]
+    [Range(-10.0f, 10.0f)]
     public float mainCameraMoveSpeed = 0.0f;
 
     [Range(0.0f, 1.0f)]
@@ -43,16 +36,23 @@ public class DoubleConeRainCtrl : MonoBehaviour
     [Range(0.0f, 4.0f)]
     public float layerSpiltRatio = 0.0f;
 
-    private float vOffset0;
-    private float vOffset1;
-    private float vOffset2;
-    private float vOffset3;
-
     public Vector2 tiling = new Vector2(1, 1);
 
     public Vector4 intensity = new Vector4(1, 1, 1, 1);
     [Range(0.0f,1.0f)]
     public float intensityFactor = 1.0f;
+
+    [Range(100.0f,1000.0f)]
+    public float mMaxDist = 300.0f;
+
+    // private
+    private Vector4 vOffset;
+
+    // double cone mesh
+    private const int NUM_MID_PART = 50;
+    private const int NUM_HALF_PART = 10;
+    private const float HEIGHT = 10.0f;
+    private const float RADIUS = 1.0f;
 
     private void Awake()
     {
@@ -60,10 +60,7 @@ public class DoubleConeRainCtrl : MonoBehaviour
 
         transform.forward = new Vector3(0, 0, 1);
 
-        vOffset0 = Random.value;
-        vOffset1 = Random.value;
-        vOffset2 = Random.value;
-        vOffset3 = Random.value;
+        vOffset = new Vector4(Random.value, Random.value, Random.value, Random.value);
 
         mainCam.depthTextureMode |= DepthTextureMode.Depth;
     }
@@ -71,6 +68,7 @@ public class DoubleConeRainCtrl : MonoBehaviour
     private void InitMesh()
     {
         doubleCone = new Mesh();
+        doubleCone.name = "Double Cone";
 
         const int numPointX = NUM_MID_PART + 1;
         const int numPointY = NUM_HALF_PART * 2 + 1;
@@ -146,7 +144,16 @@ public class DoubleConeRainCtrl : MonoBehaviour
         doubleCone.uv = uvs;
 
         // to scene
-        GetComponent<MeshFilter>().mesh = doubleCone;
+        var meshFilter = gameObject.AddComponent<MeshFilter>();
+        meshFilter.mesh = doubleCone;
+
+        var meshRenderer = gameObject.AddComponent<MeshRenderer>();
+        meshRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        meshRenderer.receiveShadows = false;
+        meshRenderer.allowOcclusionWhenDynamic = false;
+        meshRenderer.lightProbeUsage = UnityEngine.Rendering.LightProbeUsage.Off;
+        meshRenderer.reflectionProbeUsage = UnityEngine.Rendering.ReflectionProbeUsage.Off;
+        meshRenderer.material = rain;
     }
 
     private void Update()
@@ -164,52 +171,43 @@ public class DoubleConeRainCtrl : MonoBehaviour
         transform.rotation *= Quaternion.FromToRotation(-transform.up, rainDir);
 
         // update offset
-        vOffset0 += Time.deltaTime * layerSpeed * rainDir.magnitude;
-        vOffset0 -= Mathf.Floor(vOffset0);
-        vOffset1 += Time.deltaTime * layerSpeed * rainDir.magnitude;
-        vOffset1 -= Mathf.Floor(vOffset1);
-        vOffset2 += Time.deltaTime * layerSpeed * rainDir.magnitude;
-        vOffset2 -= Mathf.Floor(vOffset2);
-        vOffset3 += Time.deltaTime * layerSpeed * rainDir.magnitude;
-        vOffset3 -= Mathf.Floor(vOffset3);
+        for(int i = 0; i < 4; i++)
+        {
+            vOffset[i] += Time.deltaTime * layerSpeed * rainDir.magnitude;
+            vOffset[i] -= Mathf.Floor(vOffset[i]);
+        }
 
         // rain tiling
-        float tiling0Factor = Mathf.Pow((1 + layerSpiltRatio), 0);
-        float tiling1Factor = Mathf.Pow((1 + layerSpiltRatio), 1);
-        float tiling2Factor = Mathf.Pow((1 + layerSpiltRatio), 2);
-        float tiling3Factor = Mathf.Pow((1 + layerSpiltRatio), 3);
-
-        GetComponent<MeshRenderer>().material.SetVector("_RainST0",
-            new Vector4(tiling0Factor * tiling.x, tiling0Factor * tiling.y, 0, -vOffset0));
-        GetComponent<MeshRenderer>().material.SetVector("_RainST1",
-            new Vector4(tiling1Factor * tiling.x, tiling1Factor * tiling.y, 0, -vOffset1));
-        GetComponent<MeshRenderer>().material.SetVector("_RainST2",
-            new Vector4(tiling2Factor * tiling.x, tiling2Factor * tiling.y, 0, -vOffset2));
-        GetComponent<MeshRenderer>().material.SetVector("_RainST3",
-            new Vector4(tiling3Factor * tiling.x, tiling3Factor * tiling.y, 0, -vOffset3));
+        var tilingFactor = new Vector4();
+        for(int i = 0; i < 4; i++)
+        {
+            tilingFactor[i] = Mathf.Pow((1 + layerSpiltRatio), i);
+            GetComponent<MeshRenderer>().material.SetVector("_RainST" + i,
+                new Vector4(tilingFactor[i] * tiling.x, tilingFactor[i] * tiling.y, 0, -vOffset[i]));
+        }
 
         // depth ST
-        float sumTilingFactor = tiling0Factor + tiling1Factor + tiling2Factor + tiling3Factor;
-        float delta = mainCam.farClipPlane - mainCam.nearClipPlane;
-        float bias0 = mainCam.nearClipPlane;
-        float scale0 = tiling0Factor / sumTilingFactor * delta;
-        float bias1 = bias0 + scale0;
-        float scale1 = tiling1Factor / sumTilingFactor * delta;
-        float bias2 = bias1 + scale1;
-        float scale2 = tiling2Factor / sumTilingFactor * delta;
-        float bias3 = bias2 + scale2;
-        float scale3 = tiling3Factor / sumTilingFactor * delta;
+        float sumTilingFactor = tilingFactor[0] + tilingFactor[1] + tilingFactor[2] + tilingFactor[3];
+        float delta = Mathf.Min(mMaxDist, mainCam.farClipPlane) - mainCam.nearClipPlane;
 
-        GetComponent<MeshRenderer>().material.SetVector("_DepthT",
-            new Vector4(bias0, bias1, bias2, bias3));
-        GetComponent<MeshRenderer>().material.SetVector("_DepthS",
-            new Vector4(scale0, scale1, scale2, scale3));
+        var bias = new Vector4();
+        var scale = new Vector4();
+        
+        for(int i=0;i<4;i++)
+            scale[i] = tilingFactor[i] / sumTilingFactor * delta;
 
-        // intensity, inverse square law
-        GetComponent<MeshRenderer>().material.SetVector("_Intensity",
-            intensityFactor * intensity);
+        bias[0] = mainCam.nearClipPlane;
+        bias[1] = bias[0] + scale[0];
+        bias[2] = bias[1] + scale[1];
+        bias[3] = bias[2] + scale[2];
 
-        // set clip to world
+        GetComponent<MeshRenderer>().material.SetVector("_DepthT", bias);
+        GetComponent<MeshRenderer>().material.SetVector("_DepthS", scale);
+
+        // intensity
+        GetComponent<MeshRenderer>().material.SetVector("_Intensity", intensityFactor * intensity);
+
+        // main camera clip space to depth camera clip space
         var depthCamW2C = depthCam.projectionMatrix * depthCam.worldToCameraMatrix;
         var mainCamW2C = mainCam.projectionMatrix * mainCam.worldToCameraMatrix;
         var mainCamClip2depthCamClip = depthCamW2C * mainCamW2C.inverse;
